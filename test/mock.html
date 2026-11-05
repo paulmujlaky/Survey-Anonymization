@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GENSI mock survey</title>
+</head>
+<body>
+<form id="Page" action="/submit" method="post">
+<div id="QID1">Qualtrics question text</div>
+<input type="hidden" name="SSID" value="session-token">
+<button id="NextButton" type="submit">Next</button>
+</form>
+<pre id="saved"></pre>
+<script>
+var saved = {};
+var preset = new URLSearchParams(location.search).get("complete");
+var requests = [];
+var nativeFetch = window.fetch;
+
+window.fetch = function (url, options) {
+
+    requests.push({
+
+        url: String(url),
+        body: options && options.body ? String(options.body) : ""
+
+    });
+
+    return nativeFetch.apply(this, arguments);
+
+};
+
+if (preset) {
+
+    saved.gensi_complete = "1";
+
+}
+
+window.mockQuestion = {
+
+    nextClicks: 0,
+
+    clickNextButton: function () {
+
+        this.nextClicks++;
+        document.getElementById("saved").textContent = "SUBMITTED\n" + JSON.stringify(saved, null, 1);
+
+    }
+
+};
+
+window.Qualtrics = {
+
+    SurveyEngine: {
+
+        setJSEmbeddedData: function (key, value) {
+
+            saved[key] = value;
+
+        },
+
+        getJSEmbeddedData: function (key) {
+
+            return saved[key] || "";
+
+        },
+
+        addOnReady: function (callback) {
+
+            document.addEventListener("DOMContentLoaded", function () {
+
+                callback.call(window.mockQuestion);
+
+            });
+
+        },
+
+        addOnUnload: function () {}
+
+    }
+
+};
+</script>
+<script src="/dist/gensi-qualtrics.js"></script>
+</body>
+</html>
